@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Classification Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        canvas {
+            max-width: 600px;
+            margin: 20px auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Email Classification Dashboard</h1>
+
+    <h2>Sentiment Analysis</h2>
+    <canvas id="sentimentChart"></canvas>
+
+    <h2>Emails per Tag</h2>
+    <canvas id="tagChart"></canvas>
+
+    <h2>Latest Classified Emails</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Sender</th>
+                <th>Subject</th>
+                <th>Tag</th>
+                <th>Sentiment</th>
+                <th>Summary</th>
+            </tr>
+        </thead>
+        <tbody id="emailTableBody">
+            <!-- Dynamic data will be inserted here -->
+        </tbody>
+    </table>
+
+    <script>
+        function fetchSentimentData() {
+            fetch('/api/sentiment')
+                .then(response => response.json())
+                .then(data => {
+                    const labels = Object.keys(data);
+                    const values = Object.values(data);
+
+                    const ctx = document.getElementById('sentimentChart').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'pie',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Sentiment Analysis',
+                                data: values,
+                                backgroundColor: ['#4CAF50', '#FF5733', '#FFD700']
+                            }]
+                        }
+                    });
+                });
+        }
+
+        function fetchTagData() {
+            fetch('/api/tags')
+                .then(response => response.json())
+                .then(data => {
+                    const labels = Object.keys(data);
+                    const values = Object.values(data);
+
+                    const ctx = document.getElementById('tagChart').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Emails per Tag',
+                                data: values,
+                                backgroundColor: '#007BFF'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                y: { beginAtZero: true }
+                            }
+                        }
+                    });
+                });
+        }
+
+        function fetchEmailData() {
+            fetch('/api/emails')
+                .then(response => response.json())
+                .then(data => {
+                    const tableBody = document.getElementById('emailTableBody');
+                    tableBody.innerHTML = ''; // Clear existing table rows
+
+                    data.forEach(email => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${email.sender}</td>
+                            <td>${email.subject}</td>
+                            <td>${email.tag}</td>
+                            <td>${email.sentiment}</td>
+                            <td>${email.summary}</td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                });
+        }
+
+        // Fetch data every 10 seconds
+        setInterval(() => {
+            fetchSentimentData();
+            fetchTagData();
+            fetchEmailData();
+        }, 10000);
+
+        // Initial load
+        fetchSentimentData();
+        fetchTagData();
+        fetchEmailData();
+    </script>
+
+</body>
+</html>
+
